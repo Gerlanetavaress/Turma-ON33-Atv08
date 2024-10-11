@@ -1,0 +1,73 @@
+import sqlite3
+import csv
+from google.colab import drive
+drive.mount('/content/drive')
+filepath = ('/content/drive/My Drive/VINICIUS/livros.csv')
+
+conexao = sqlite3.connect('livraria.db')
+cursor = conexao.cursor()
+
+cursor.execute("DROP TABLE IF EXISTS livros")
+
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS livros (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT,
+    autor TEXT,
+    ano INTEGER,
+    preco REAL
+);
+''')
+conexao.commit()
+
+print("Tabela 'livros' criada com sucesso.")
+
+with open(filepath, 'r', newline='', encoding='utf-8') as file:
+    leitor_csv = csv.DictReader(file)
+    for linha in leitor_csv:
+ 
+        cursor.execute('''
+        INSERT INTO livros (titulo, autor, ano, preco)
+        VALUES (?, ?, ?, ?)
+        ''', (linha['titulo'], linha['autor'], int(linha['ano']), float(linha['preco'])))
+
+conexao.commit()
+print("Dados importados do CSV com sucesso.")
+
+cursor.execute("SELECT * FROM livros")
+livros = cursor.fetchall()
+
+print("Registros na tabela 'livros':")
+for livro in livros:
+    print(f"ID: {livro[0]}, Título: {livro[1]}, Autor: {livro[2]}, Ano: {livro[3]}, Preço: {livro[4]:.2f}")
+
+novo_preco = 29.99
+livro_id = 1
+
+cursor.execute("UPDATE livros SET preco = ? WHERE id = ?", (novo_preco, livro_id))
+conexao.commit()
+
+print(f"Preço do livro com ID {livro_id} atualizado para {novo_preco:.2f}.")
+
+livro_id = 3
+
+cursor.execute("DELETE FROM livros WHERE id = ?", (livro_id,))
+conexao.commit()
+
+print(f"Livro com ID {livro_id} removido da tabela.")
+
+cursor.execute("SELECT * FROM livros")
+livros = cursor.fetchall()
+
+colunas = ['id', 'titulo', 'autor', 'ano', 'preco']
+
+file_created = ('/content/drive/My Drive/NOME_DO_ARQUIVO')
+
+with open(file_created, 'w', newline='', encoding='utf-8') as file:
+    escritor_csv = csv.writer(file)
+    escritor_csv.writerow(colunas)
+    escritor_csv.writerows(livros)  
+
+
+cursor.close()
+conexao.close()
